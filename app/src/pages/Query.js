@@ -1,7 +1,8 @@
-import { Container, Stack, Box, Typography, TextField, Button, styled, Icon } from '@mui/material';
-import React, { useState } from 'react';
+import { Container, Stack, Box, Typography, TextField, Button, styled, Icon, Divider } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SendIcon from '@mui/icons-material/Send';
+import api from 'api';
 
 const headerStyling = { 
     position: "absolute", 
@@ -27,15 +28,53 @@ function History() {
 const Query = () => {
     const [searchParams, _] = useSearchParams();
     const [message, setMessage] = useState("");
+    const [repoList, setRepoList] = useState([]);
+    const currentRepo = searchParams.get("repo");
+    const [currentRepoName, setCurrentRepoName] = useState(currentRepo);
+
+    useEffect(() => {
+        api.post('/repo/create', {
+            path: currentRepo,
+        })
+        .then(function (response) {
+            setCurrentRepoName(response.data.name);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+
+        api.get('/repos')
+        .then(function (response) {
+            setRepoList(response.data);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+      }, [currentRepo]);
+
+    
+
     return (
         <Box sx={{ display: "flex" }} >
             <Box sx={{ p: 0, width: "20vw", height: "100vw", borderRight: "1px solid #dedede" }}>
-                <Box sx={{ ...headerStyling, width: "20vw"}}><Typography variant="h6"><b>{searchParams.get("repo")}</b></Typography></Box >
-                aaa
+                <Box sx={{ ...headerStyling, width: "20vw"}}><Typography variant="h6">Repositories</Typography></Box >
+                <Box sx={{ m: "4em" }} />
+                <Divider/>
+                {repoList.map((repo, _) => {
+                    const selected = repo.name === currentRepoName? { backgroundColor: "rgba(0, 0, 0, 0.05)" } : {};
+                    return (
+                        <Box key={repo.path}>
+                            <Box sx={{ ...selected, py: "1.5em", px: "0.5em" }}>
+                                <Typography>{repo.name}</Typography>
+                            </Box>
+                            <Divider/>
+                        </Box>
+                    );
+            })}
             </Box>
             <Box sx={{ display: "flex", width: "80vw", height: "100vw"}}>
                 <Box sx={{ ...headerStyling, width: "80vw" }}>
-                    <Typography variant="h6">Chat</Typography>
+                    <Typography variant="h6" fontWeight="fontWeightMedium">{currentRepoName}</Typography>
                 </Box>
                 <Box sx={{ p: "0px", width: "55vw", height: "100vw", borderRight: "1px solid #dedede" }}>
                     <History/>

@@ -1,8 +1,13 @@
 from flask import Flask, request
 import sqlite3
-#from codechat.database.utils import fetch_all_rows
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+cors = CORS(app, resources={
+    r"/*": {
+        "origins": "*", 
+        }
+    })
 
 def dict_factory(cursor, row):
     d = {}
@@ -76,3 +81,6 @@ def repos():
         "SELECT * FROM repo;", 
         error_msg=lambda e: print(f"Failed to get repository list with error:", e)
     )
+
+if __name__ == "__main__":
+    app.run(debug=True)
