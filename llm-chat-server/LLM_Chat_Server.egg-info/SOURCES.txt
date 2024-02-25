@@ -1,6 +1,0 @@
-setup.py
-LLM_Chat_Server.egg-info/PKG-INFO
-LLM_Chat_Server.egg-info/SOURCES.txt
-LLM_Chat_Server.egg-info/dependency_links.txt
-LLM_Chat_Server.egg-info/top_level.txt
-codechat/main.py

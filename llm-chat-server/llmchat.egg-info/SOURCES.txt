@@ -1,5 +1,0 @@
-setup.py
-codechat.egg-info/PKG-INFO
-codechat.egg-info/SOURCES.txt
-codechat.egg-info/dependency_links.txt
-codechat.egg-info/top_level.txt
