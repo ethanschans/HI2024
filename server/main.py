@@ -30,8 +30,8 @@ def repo_create():
     conn = sqlite3.connect("database.db")
     
     name = "REPOSITORY"
-    try:
-        #TODO check if exsists, if so return name
+    try:    
+
         data = request.get_json()
         #TODO
         name = "string_name"
@@ -39,6 +39,14 @@ def repo_create():
         path = data["path"]
 
         cur = conn.cursor()
+
+        #Check for duplicate; if duplicate, return name
+        query = "SELECT * FROM repo WHERE path = \"" + path + "\";"
+        rows = cur.execute(query).fetchall()
+        if(len(rows) > 0):
+            return {
+                "name": rows[0][1]
+            }        
         
         query = """
         INSERT INTO repo (name, path)
