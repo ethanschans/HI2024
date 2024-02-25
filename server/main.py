@@ -1,6 +1,7 @@
 from flask import Flask, request
 import sqlite3
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
+import urllib.parse
 
 app = Flask(__name__)
 cors = CORS(app, resources={
@@ -34,21 +35,20 @@ def fetch_all_rows(query, error_msg, database_path="database.db"):
 def repo_create():
     conn = sqlite3.connect("database.db")
     
-    name = "REPOSITORY"
+    name = "Repository"
     try:    
 
         data = request.get_json()
         #TODO
-        # name = "string_name"
-        name = data["name"]
+        name = data["path"]
 
         path = data["path"]
 
         cur = conn.cursor()
 
-        #Check for duplicate; if duplicate, return name
-        query = "SELECT * FROM repo WHERE path = \"" + path + "\";"
-        rows = cur.execute(query).fetchall()
+        # Check for duplicate; if duplicate, return name
+        query = "SELECT * FROM repo WHERE path = ?;"
+        rows = cur.execute(query, (path,)).fetchall()
         if(len(rows) > 0):
             return {
                 "name": rows[0][1]
@@ -72,10 +72,6 @@ def repo_create():
             "name": name,
         }
 
-# @app.route("/repo/update", method='POST')
-# def repo_update():
-#     return "<p>Hello, World!</p>"
-
 @app.route("/repos", methods=['GET'])
 def repos():
     return fetch_all_rows(
@@ -87,27 +83,15 @@ def repos():
 def history_create():
     conn = sqlite3.connect("database.db")
     
-    role = "HISTORY"
+    role = "Unknown"
     try:    
 
         data = request.get_json()
-        #TODO
         role = data["role"]
         message = data["message"]
-        # role = "string_role"
-        # message = "YYY"
         path = data["path"]
 
-        cur = conn.cursor()
-
-        #Check for duplicate; if duplicate, return name
-        query = "SELECT * FROM history WHERE path = \"" + path + "\";"
-        rows = cur.execute(query).fetchall()
-        if(len(rows) > 0):
-            return {
-                "role": rows[0][2]
-            }        
-
+        cur = conn.cursor()    
 
         query = """
         INSERT INTO history (message, path, role)
@@ -123,16 +107,30 @@ def history_create():
     
     finally:
         conn.close()
-        return {
-            "role": role,
-        }
+    return {}
 
-@app.route("/history/get", methods=['GET'])
-def history_get():
-    return fetch_all_rows(
-        "SELECT * FROM history;", 
-        error_msg=lambda e: print(f"Failed to get history list with error:", e)
-    )
+@app.route("/history/<path>", methods=['GET'])
+def history(path):
+    path = urllib.parse.unquote(path)
+    conn = sqlite3.connect("database.db")
+    rows = []
+    try:
+        cur = conn.cursor()
+
+        query = "SELECT * FROM history WHERE path = ?;"
+        rows = cur.execute(query, (path,)).fetchall()
+    
+        cur.execute(query, (path,))
+
+        conn.commit()
+
+    except Exception as e:
+        print("Failed to get history with error:", e)
+        conn.rollback()
+    
+    finally:
+        conn.close()
+        return rows
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,8 +1,13 @@
 import { Container, Stack, Box, Typography, TextField, Button, styled, Icon, Divider } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import SendIcon from '@mui/icons-material/Send';
 import api from 'api';
+
+const Role = {
+    USER: 'user',
+    BOT: 'bot',
+};
 
 const headerStyling = { 
     position: "absolute", 
@@ -12,25 +17,25 @@ const headerStyling = {
     boxShadow: "-4px 9px 25px -6px rgba(0, 0, 0, 0.1)",
     zIndex: 999,
 }
-  
-function History() {
-    return (
-      <Box sx={{
-        backgroundColor: "gray",
-        height: "calc(100vh - 2.75em)",
-        width: "100%",
-      }}>
-
-      </Box>
-    )
-  }
 
 const Query = () => {
+    const navigate = useNavigate();
     const [searchParams, _] = useSearchParams();
     const [message, setMessage] = useState("");
     const [repoList, setRepoList] = useState([]);
-    const currentRepo = searchParams.get("repo");
+    const [history, setHistory] = useState([]);
+    let currentRepo = searchParams.get("repo");
     const [currentRepoName, setCurrentRepoName] = useState(currentRepo);
+
+    const getHistory = () => {
+        api.get(`/history/${encodeURIComponent(encodeURIComponent(currentRepo))}`)
+            .then(function (response) {
+                setHistory(response.data);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
 
     useEffect(() => {
         api.post('/repo/create', {
@@ -50,9 +55,23 @@ const Query = () => {
         .catch(function (error) {
             console.log(error);
         });
-      }, [currentRepo]);
 
-    
+        getHistory();
+      }, [currentRepo]);
+    const sendMessage = () => {
+        api.post('/history/create', {
+            path: currentRepo,
+            role: Role.USER,
+            message: message,
+        })
+        .then(function (_) {
+            setMessage("");
+            getHistory();
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+    }
 
     return (
         <Box sx={{ display: "flex" }} >
@@ -64,20 +83,36 @@ const Query = () => {
                     const selected = repo.name === currentRepoName? { backgroundColor: "rgba(0, 0, 0, 0.05)" } : {};
                     return (
                         <Box key={repo.path}>
-                            <Box sx={{ ...selected, py: "1.5em", px: "0.5em" }}>
+                            <Box onClick={() => navigate(`/query?repo=${repo.path}`)} sx={{ ...selected, py: "1.5em", px: "0.5em" }}>
                                 <Typography>{repo.name}</Typography>
                             </Box>
                             <Divider/>
                         </Box>
                     );
-            })}
+                })}
             </Box>
             <Box sx={{ display: "flex", width: "80vw", height: "100vw"}}>
                 <Box sx={{ ...headerStyling, width: "80vw" }}>
                     <Typography variant="h6" fontWeight="fontWeightMedium">{currentRepoName}</Typography>
                 </Box>
                 <Box sx={{ p: "0px", width: "55vw", height: "100vw", borderRight: "1px solid #dedede" }}>
-                    <History/>
+                    <Box sx={{
+                        maxHeight: "calc(100vh - 7em)",
+                        minHeight: "calc(100vh - 7em)",
+                        width: "100%",
+                    }}>
+                        <Box sx={{ m: "4em" }} />
+                        {history.map((chat, _) => {
+                            return (
+                                <Box key={chat[0]}>
+                                    <Box sx={{ py: "1.5em", px: "0.5em", alignItems: "right" }}>
+                                        <Typography>{chat[1]}</Typography>
+                                    </Box>
+                                    <Divider/>
+                                </Box>
+                            );
+                        })}
+                    </Box>
                     <Box sx={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -94,12 +129,12 @@ const Query = () => {
                             value={message}
                             onChange={(event) => setMessage(event.target.value)}
                         />
-                        <Button sx={{m:"4px"}} variant={"outlined"} endIcon={<SendIcon />}>Send</Button>
+                        <Button sx={{m:"4px"}} onClick={sendMessage} variant={"outlined"} endIcon={<SendIcon />}>Send</Button>
                     </Box>
                 </Box>
-                <Container sx={{ width: "25vw", height: "100vw" }}>
-                    aaa
-                </Container>
+                <Box sx={{ width: "25vw", height: "100vw" }}>
+                    
+                </Box>
             </Box>
         </Box>
     );
