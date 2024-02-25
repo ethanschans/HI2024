@@ -21,6 +21,20 @@ table = """ CREATE TABLE repo (
 
 cursor_obj.execute(table)
 
+# Drop the table if already exists.
+cursor_obj.execute("DROP TABLE IF EXISTS history")
+
+# Creating table
+table = """ CREATE TABLE history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message VARCHAR(1000) NOT NULL,
+            path VARCHAR(256) NOT NULL,
+            role VARCHAR(256) NOT NULL
+        ); """
+
+
+cursor_obj.execute(table)
+
 # # Drop the table if already exists.
 # cursor_obj.execute("DROP TABLE IF EXISTS chats")
 

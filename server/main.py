@@ -39,7 +39,8 @@ def repo_create():
 
         data = request.get_json()
         #TODO
-        name = "string_name"
+        # name = "string_name"
+        name = data["name"]
 
         path = data["path"]
 
@@ -80,6 +81,57 @@ def repos():
     return fetch_all_rows(
         "SELECT * FROM repo;", 
         error_msg=lambda e: print(f"Failed to get repository list with error:", e)
+    )
+
+@app.route("/history/create", methods=['POST'])
+def history_create():
+    conn = sqlite3.connect("database.db")
+    
+    role = "HISTORY"
+    try:    
+
+        data = request.get_json()
+        #TODO
+        role = data["role"]
+        message = data["message"]
+        # role = "string_role"
+        # message = "YYY"
+        path = data["path"]
+
+        cur = conn.cursor()
+
+        #Check for duplicate; if duplicate, return name
+        query = "SELECT * FROM history WHERE path = \"" + path + "\";"
+        rows = cur.execute(query).fetchall()
+        if(len(rows) > 0):
+            return {
+                "role": rows[0][2]
+            }        
+
+
+        query = """
+        INSERT INTO history (message, path, role)
+        VALUES (?, ?, ?);
+        """
+        cur.execute(query, (message, path, role,))
+
+        conn.commit()
+
+    except Exception as e:
+        print("Failed to create history with error:", e)
+        conn.rollback()
+    
+    finally:
+        conn.close()
+        return {
+            "role": role,
+        }
+
+@app.route("/history/get", methods=['GET'])
+def history_get():
+    return fetch_all_rows(
+        "SELECT * FROM history;", 
+        error_msg=lambda e: print(f"Failed to get history list with error:", e)
     )
 
 if __name__ == "__main__":
